@@ -2,15 +2,15 @@
 
 ## Introduction
 
-This is a simple Windows console (Command Line) application for adding weather values to a set of jpg image file EXIF 2.31 Metadata. Using the date and time a photo was taken, the app matches the closest weather reading from a file containing periodic weather readings weatherhistory.csv file.
+This is a simple Windows console (Command Line) application for adding weather values to a set of jpg image file EXIF 2.31 Metadata. Using the date and time a photo was taken, the app matches the closest weather reading from a file containing periodic weather readings - weatherhistory.csv.
 
-The idea behind this utility is if you can obtain historical weather information for a location near where the photos were taken this information could be saved within the image file metadata.
+The idea behind this utility is if you can obtain historical weather information for a location near where the photos were taken this information (Ambient Temperature, Humidity and Pressure) could be saved within the image file metadata.
 
 Read the blog post: [Capturing the moment and the ambient weather information in photos](https://jmoliver.wordpress.com/2018/07/07/capturing-the-moment-and-the-ambient-weather-information-in-photos/)
 
 ## Dependency with ExifTool
 
-WeatherTag requires that **ExifTool.exe** be copied into the same folder with WeatherTag.exe on your PC. ExifTool is a utility written by Phil Harvey which can read, write and edit file metadata. Exiftool can be obtained at https://www.sno.phy.queensu.ca/~phil/exiftool/
+WeatherTag requires that **ExifTool.exe** be copied into the same folder with WeatherTag.exe on your PC. ExifTool is a utility written by Phil Harvey which can read, write and edit file metadata. The latest version of exiftool can be obtained at https://www.sno.phy.queensu.ca/~phil/exiftool/
 
 ## Installation
 
