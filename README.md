@@ -29,6 +29,9 @@ When WeatherTag.exe is executed within a folder containing image files and the w
 ## Example Files
 Within the **example** folder there are 5 sample images along with a historical weather log from a weather station near the location where the photos were taken. Open a Command Prompt within the example folder. Running **WeatherTag.exe** within the folder will match the closest weather measurement contained. Running **WeatherTag.exe -write** will match the weather measurements as well as write the information back to the photo image files. A copy of the original image file will be made with the ***.jpg_original** extension. If you wish to delete the original image files and keep the modified files you can delete them by using the **del *.jpg_original** command. 
 
+## Download WeatherTag.exe
+You can download WeatherTag.exe from the project's GitHub Release page - https://github.com/josemoliver/WeatherTag/releases 
+
 ## Build WeatherTag.exe
 1. Open the **WeatherTag.sln file** in Visual Studio 2017. 
 2. WeatherTag uses Newtonsoft.JSON Nuget Package which should be downloaded using the Nuget Package Manager.
