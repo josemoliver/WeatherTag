@@ -26,6 +26,10 @@ There are two pieces of information required for Weather Tag to perform its func
 
 When WeatherTag.exe is executed within a folder containing image files and the weatherhistory.csv file it will attempt to match the closest weather reading (within an hour) for the date and time a photo was taken. If the **-write** flag is use it will then write the Ambient Temperature, Humidity and Pressure values to the image files' corresponding EXIF metadata fields.
 
+From the Windows Command line, navigate to a folder containing the images you wish to tag as well as the weathehistory.csv file. Enter the following command:
+
+`weathertag -write`
+
 ## Example Files
 Within the **example** folder there are 5 sample images along with a historical weather log from a weather station near the location where the photos were taken. Open a Command Prompt within the example folder. Running **WeatherTag.exe** within the folder will match the closest weather measurement contained. Running **WeatherTag.exe -write** will match the weather measurements as well as write the information back to the photo image files. A copy of the original image file will be made with the ***.jpg_original** extension. If you wish to delete the original image files and keep the modified files you can delete them by using the **del *.jpg_original** command. 
 
