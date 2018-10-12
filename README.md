@@ -35,5 +35,20 @@ You can download WeatherTag.exe from the project's GitHub Release page - https:/
 ## Build WeatherTag.exe
 1. Open the **WeatherTag.sln file** in Visual Studio 2017. 
 2. WeatherTag uses Newtonsoft.JSON Nuget Package which should be downloaded using the Nuget Package Manager.
-3. Build Solution <Ctrl>+<Shift>+<B>
+3. Build Solution
 4. The **WeatherTag.exe** file should be deposited in the **bin** folder. 
+  
+## Reading Ambient Temperature, Humidity and Pressure EXIF values
+Once the Ambient Temperature, Humidity and Pressure values are written to the jpg image files these can be read with any application or utility which supports reading these tags. Given that the EXIF 2.31 is relatively new, these are few. 
+
+Here are two options:
+
+### Exiftool
+Exiftool can read these values using the appropiate command line tags. For example, this command will list these values for all jpgs files contained in the current directory:
+
+`exiftool *.jpg -AmbientTemperature -Humidity -Pressure`
+
+(Reference: Exiftool EXIF tags - https://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/EXIF.html)
+
+### Geosetter
+Geosetter (https://www.geosetter.de/en/main-en/) is a Windows freeware application which can read the EXIF 2.31 file metadata.
