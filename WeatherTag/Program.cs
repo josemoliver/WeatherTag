@@ -16,8 +16,32 @@ namespace WeatherTag
             bool WriteToFile = false;
             string ActiveFilePath = Directory.GetCurrentDirectory();
             List<WeatherReading> reading = new List<WeatherReading>();
+
+
+            //Check for Exiftool - if not found display error message.
+            double ExiftoolVersion = CheckExiftool();
+
+            if (ExiftoolVersion!=0)
+            {
+                Console.WriteLine("Exifool version " + ExiftoolVersion);
+            }
+            else
+            {
+                Console.WriteLine("Exifool not found! WeatherTag needs exiftool in order to work properly.");
+                Environment.Exit(0);
+            }
+
+            //Fetch jpg files in directory, if none found display error
             string[] ImageFiles = Directory.GetFiles(ActiveFilePath, "*.jpg");
+
+            if (ImageFiles.Count()==0)
+            {
+                Console.WriteLine("No .jpg files found.");
+                Environment.Exit(0);
+            }
+            
             string WeatherHistoryFile = Directory.GetCurrentDirectory() + "\\weatherhistory.csv";
+
             
             //Check for -write flag, if found then matched weather values will be writen back to the jpg file EXIF metadata.
             for (int i=0; i<args.Count();i++)
@@ -36,78 +60,86 @@ namespace WeatherTag
             
             Console.WriteLine("Weather file: " + WeatherHistoryFile);
 
-            //Load weather history file into memory
-            using (var reader = new StreamReader(WeatherHistoryFile))
+            //Load weather history file into stream
+            try
             {
-                while (!reader.EndOfStream)
+                using (var reader = new StreamReader(WeatherHistoryFile))
                 {
-                    var line = reader.ReadLine();
-
-                    //Remove any measurement symbols
-                    line = line.Replace("°", "");
-                    line = line.Replace("C", "");
-                    line = line.Replace("hPa", "");
-                    line = line.Replace("%", "");
-                    
-                    var values = line.Split(',');
-
-                    Double ambientTemperature = 99999;
-                    Double humidity = 99999;
-                    Double pressure = 99999;
-
-                    DateTime Date1 = DateTime.Parse(values[0].ToString().Trim() + " " + values[1].ToString().Trim());
-
-
-                    //Load Ambient Temperature value, if invalid mark as invalid = 99999
-                    try
+                    while (!reader.EndOfStream)
                     {
-                        ambientTemperature = Double.Parse(values[2].ToString().Trim());
+                        var line = reader.ReadLine();
 
-                        //Check for valid Ambient Temperature Range in Celsius
-                        if ((ambientTemperature<-100)||(ambientTemperature>150))
+                        //Remove any measurement symbols
+                        line = line.Replace("°", "");
+                        line = line.Replace("C", "");
+                        line = line.Replace("hPa", "");
+                        line = line.Replace("%", "");
+
+                        var values = line.Split(',');
+
+                        Double ambientTemperature = 99999;
+                        Double humidity = 99999;
+                        Double pressure = 99999;
+
+                        DateTime Date1 = DateTime.Parse(values[0].ToString().Trim() + " " + values[1].ToString().Trim());
+
+
+                        //Load Ambient Temperature value, if invalid mark as invalid = 99999
+                        try
+                        {
+                            ambientTemperature = Double.Parse(values[2].ToString().Trim());
+
+                            //Check for valid Ambient Temperature Range in Celsius
+                            if ((ambientTemperature < -100) || (ambientTemperature > 150))
+                            {
+                                ambientTemperature = 99999;
+                            }
+
+                        }
+                        catch
                         {
                             ambientTemperature = 99999;
                         }
 
-                    }
-                    catch
-                    {
-                        ambientTemperature = 99999;
-                    }
+                        //Load Humidity value, if invalid mark as invalid = 99999
+                        try
+                        {
+                            humidity = Double.Parse(values[3].ToString().Trim());
 
-                    //Load Humidity value, if invalid mark as invalid = 99999
-                    try
-                    {
-                        humidity = Double.Parse(values[3].ToString().Trim());
+                            //Check for valid Humidity Range
+                            if ((humidity < 0) || (humidity > 100))
+                            {
+                                humidity = 99999;
+                            }
 
-                        //Check for valid Humidity Range
-                        if ((humidity < 0) || (humidity > 100))
+                        }
+                        catch
                         {
                             humidity = 99999;
                         }
+                        try
+                        {
+                            pressure = Double.Parse(values[4].ToString().Trim());
 
-                    }
-                    catch
-                    {
-                        humidity = 99999;
-                    }
-                    try
-                    {
-                        pressure = Double.Parse(values[4].ToString().Trim());
-
-                        //Check for valid Pressure Range
-                        if ((pressure < 800) || (pressure > 1100))
+                            //Check for valid Pressure Range
+                            if ((pressure < 800) || (pressure > 1100))
+                            {
+                                pressure = 99999;
+                            }
+                        }
+                        catch
                         {
                             pressure = 99999;
                         }
-                    }
-                    catch
-                    {
-                        pressure = 99999;
-                    }
 
-                    reading.Add(new WeatherReading(Date1, ambientTemperature, humidity, pressure));
+                        reading.Add(new WeatherReading(Date1, ambientTemperature, humidity, pressure));
+                    }
                 }
+            }
+            catch
+            {
+                Console.WriteLine(WeatherHistoryFile +" not found.");
+                Environment.Exit(0);
             }
 
 
@@ -242,6 +274,35 @@ namespace WeatherTag
             }
             
             return DateTime.Parse(CreateDateTime);
+        }
+
+        public static double CheckExiftool()
+        {
+            // Start Process
+            Process p = new Process();
+
+            // Redirect the output stream of the child process.
+            p.StartInfo.UseShellExecute = false;
+            p.StartInfo.RedirectStandardOutput = true;
+            p.StartInfo.CreateNoWindow = true;
+            p.StartInfo.Arguments = "-ver";
+            p.StartInfo.FileName = "exiftool.exe";
+            p.Start();
+
+            double exiftoolreturn = 0;
+            // Read the output stream
+           try
+           {
+                string exiftooloutput = p.StandardOutput.ReadToEnd().Trim();
+                exiftoolreturn = double.Parse(exiftooloutput);
+                p.WaitForExit();
+           }
+           catch
+            {
+               exiftoolreturn = 0;
+            }
+
+            return exiftoolreturn;
         }
 
         public static string WriteFileInfo(string File, WeatherReading reading)

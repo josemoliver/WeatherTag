@@ -9,6 +9,7 @@ Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
+		Description = A simple Windows console app for adding weather values to a set of jpg image files' EXIF 2.31 Metadata. Using the date and time a photo was taken, the app looks for the closest weather reading from a csv file containing periodic weather readings.
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{0D6E5463-98AA-421B-97CB-7250C6864555}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
