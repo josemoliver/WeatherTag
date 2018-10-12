@@ -26,6 +26,10 @@ There are two pieces of information required for Weather Tag to perform its func
 
 When WeatherTag.exe is executed within a folder containing image files and the weatherhistory.csv file it will attempt to match the closest weather reading (within an hour) for the date and time a photo was taken. If the **-write** flag is use it will then write the Ambient Temperature, Humidity and Pressure values to the image files' corresponding EXIF metadata fields.
 
+From the Windows Command line, navigate to a folder containing the images you wish to tag as well as the weathehistory.csv file. Enter the following command:
+
+`weathertag -write`
+
 ## Example Files
 Within the **example** folder there are 5 sample images along with a historical weather log from a weather station near the location where the photos were taken. Open a Command Prompt within the example folder. Running **WeatherTag.exe** within the folder will match the closest weather measurement contained. Running **WeatherTag.exe -write** will match the weather measurements as well as write the information back to the photo image files. A copy of the original image file will be made with the ***.jpg_original** extension. If you wish to delete the original image files and keep the modified files you can delete them by using the **del *.jpg_original** command. 
 
@@ -35,5 +39,20 @@ You can download WeatherTag.exe from the project's GitHub Release page - https:/
 ## Build WeatherTag.exe
 1. Open the **WeatherTag.sln file** in Visual Studio 2017. 
 2. WeatherTag uses Newtonsoft.JSON Nuget Package which should be downloaded using the Nuget Package Manager.
-3. Build Solution <Ctrl>+<Shift>+<B>
+3. Build Solution
 4. The **WeatherTag.exe** file should be deposited in the **bin** folder. 
+  
+## Reading Ambient Temperature, Humidity and Pressure EXIF values
+Once the Ambient Temperature, Humidity and Pressure values are written to the jpg image files these can be read with any application or utility which supports reading these tags. Given that the EXIF 2.31 is relatively new, these are few. 
+
+Here are two options:
+
+### Exiftool
+Exiftool can read these values using the appropiate command line tags. For example, this command will list these values for all jpgs files contained in the current directory:
+
+`exiftool *.jpg -AmbientTemperature -Humidity -Pressure`
+
+(Reference: Exiftool EXIF tags - https://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/EXIF.html)
+
+### Geosetter
+Geosetter (https://www.geosetter.de/en/main-en/) is a Windows freeware application which can read the EXIF 2.31 file metadata.
