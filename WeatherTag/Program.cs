@@ -58,7 +58,7 @@ namespace WeatherTag
             }
 
             
-            Console.WriteLine("Weather file: " + WeatherHistoryFile);
+            //Console.WriteLine("Weather file: " + WeatherHistoryFile);
 
             //Load weather history file into stream
             try
@@ -278,8 +278,14 @@ namespace WeatherTag
 
         public static double CheckExiftool()
         {
+
+            double exiftoolreturn = 0;
+
+            try
+            { 
+
             // Start Process
-            Process p = new Process();
+                Process p = new Process();
 
             // Redirect the output stream of the child process.
             p.StartInfo.UseShellExecute = false;
@@ -289,13 +295,12 @@ namespace WeatherTag
             p.StartInfo.FileName = "exiftool.exe";
             p.Start();
 
-            double exiftoolreturn = 0;
+            
             // Read the output stream
-           try
-           {
+           
                 string exiftooloutput = p.StandardOutput.ReadToEnd().Trim();
                 exiftoolreturn = double.Parse(exiftooloutput);
-                p.WaitForExit();
+                p.WaitForExit(8000);
            }
            catch
             {
@@ -336,7 +341,7 @@ namespace WeatherTag
             p.StartInfo.FileName = "exiftool.exe";
             p.Start();
             output = File + Arguments+" --- " + p.StandardOutput.ReadToEnd();
-            p.WaitForExit();
+            p.WaitForExit(10000);
 
             return output;
         }
