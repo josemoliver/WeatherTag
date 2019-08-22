@@ -23,11 +23,11 @@ namespace WeatherTag
 
             if (ExiftoolVersion!=0)
             {
-                Console.WriteLine("Exifool version " + ExiftoolVersion);
+                Console.WriteLine("Exiftool version " + ExiftoolVersion);
             }
             else
             {
-                Console.WriteLine("Exifool not found! WeatherTag needs exiftool in order to work properly.");
+                Console.WriteLine("Exiftool not found! WeatherTag needs exiftool in order to work properly.");
                 Environment.Exit(0);
             }
 
@@ -138,7 +138,7 @@ namespace WeatherTag
             }
             catch
             {
-                Console.WriteLine(WeatherHistoryFile +" not found.");
+                Console.WriteLine(WeatherHistoryFile +" not found or unable to open.");
                 Environment.Exit(0);
             }
 
