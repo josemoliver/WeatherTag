@@ -24,7 +24,7 @@ There are two pieces of information required for Weather Tag to perform its func
 1. Any number of photos taken with correct Date and Time stamp. 
 2. A comma separated value file (.csv) in UTF-8 named **weatherhistory.csv** containing periodic weather measurements. The first column values are required to contain a date in MM/DD/YYYY format (Example: 10/5/2018). The second column values are required to contain time values in 12-Hour format (Example: 3:00 PM). The third column should contain ambient temperature values in Celsius. The fourth column values should contain atmospheric humidity in percentage. The fifth column values should contain atmospheric pressure in hectopascals (hPa). The Ambient Temperature, Humidity and Pressure values need not have the measurement units added (°C, %, hPa). 
 
-When WeatherTag.exe is executed within a folder containing image files and the weatherhistory.csv file it will attempt to match the closest weather reading (within an hour) for the date and time a photo was taken. If the **-write** flag is use it will then write the Ambient Temperature, Humidity and Pressure values to the image files' corresponding EXIF metadata fields.
+When WeatherTag.exe is executed within a folder containing image files and the weatherhistory.csv file it will attempt to match the closest weather reading (within an hour) for the date and time a photo was taken. If the **-write** flag is use it will then write the Ambient Temperature, Humidity and Pressure values to the image files' corresponding EXIF metadata fields. Use the **-overwrite** flag to overwrite existing image files, otherwise a backup of the original image files will be made. 
 
 From the Windows Command line, navigate to a folder containing the images you wish to tag as well as the weathehistory.csv file. Enter the following command:
 
@@ -37,7 +37,7 @@ Within the **example** folder there are 5 sample images along with a historical 
 You can download WeatherTag.exe from the project's GitHub Release page - https://github.com/josemoliver/WeatherTag/releases 
 
 ## Build WeatherTag.exe
-1. Open the **WeatherTag.sln file** in Visual Studio 2017. 
+1. Open the **WeatherTag.sln file** in Visual Studio 2022. 
 2. WeatherTag uses Newtonsoft.JSON Nuget Package which should be downloaded using the Nuget Package Manager.
 3. Build Solution
 4. The **WeatherTag.exe** file should be deposited in the **bin** folder. 

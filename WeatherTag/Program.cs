@@ -4,26 +4,33 @@ using System.Diagnostics;
 using System.Linq;
 using System.IO;
 using Newtonsoft.Json;
+using System.Text.RegularExpressions;
 
 namespace WeatherTag
 {
     class Program
     {
-        
+        //**
+        //* Author:    José Oliver-Didier
+        //* Created:   October 2018
+        //* Ref: https://github.com/josemoliver/WeatherTag
+        //**
+
         static void Main(string[] args)
         {
             
-            bool WriteToFile = false;
-            string ActiveFilePath = Directory.GetCurrentDirectory();
-            List<WeatherReading> reading = new List<WeatherReading>();
+            bool writeToFile                = false;                            //flag to perform write operation to save values to image metadata.
+            bool overwriteFile              = false;
+            string activeFilePath           = Directory.GetCurrentDirectory();  //current file directory.
+            List<WeatherReading> reading    = new List<WeatherReading>();       //weather reading values.
 
 
             //Check for Exiftool - if not found display error message.
-            double ExiftoolVersion = CheckExiftool();
+            double exiftoolVersion = CheckExiftool();
 
-            if (ExiftoolVersion!=0)
+            if (exiftoolVersion!=0)
             {
-                Console.WriteLine("Exiftool version " + ExiftoolVersion);
+                Console.WriteLine("Exiftool version " + exiftoolVersion);
             }
             else
             {
@@ -31,16 +38,16 @@ namespace WeatherTag
                 Environment.Exit(0);
             }
 
-            //Fetch jpg files in directory, if none found display error
-            string[] ImageFiles = Directory.GetFiles(ActiveFilePath, "*.jpg");
+            //Fetch jpg and heic files in directory, if none found display error
+            string[] imageFiles = Directory.GetFiles(activeFilePath, "*.*").Where(file => file.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || file.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) || file.EndsWith(".heic", StringComparison.OrdinalIgnoreCase)).ToArray();
 
-            if (ImageFiles.Count()==0)
+            if (imageFiles.Count()==0)
             {
-                Console.WriteLine("No .jpg files found.");
+                Console.WriteLine("No supported image files found.");
                 Environment.Exit(0);
             }
             
-            string WeatherHistoryFile = Directory.GetCurrentDirectory() + "\\weatherhistory.csv";
+            string weatherHistoryFile = Directory.GetCurrentDirectory() + "\\weatherhistory.csv"; //Get weather history csv file
 
             
             //Check for -write flag, if found then matched weather values will be writen back to the jpg file EXIF metadata.
@@ -48,32 +55,29 @@ namespace WeatherTag
             {
                 if (args[i].ToString().ToLower().Trim()=="-write")
                 {
-                    WriteToFile = true;
+                    writeToFile = true;
+                }
+
+                if (args[i].ToString().ToLower().Trim() == "-overwrite")
+                {
+                    overwriteFile = true;
                 }
             }
 
-            if (WriteToFile==false)
+            if (writeToFile==false)
             {
                 Console.WriteLine("No changes to file(s) will be performed - To write weather tags use -write flag");
             }
 
-            
-            //Console.WriteLine("Weather file: " + WeatherHistoryFile);
-
+                        
             //Load weather history file into stream
             try
             {
-                using (var reader = new StreamReader(WeatherHistoryFile))
+                using (var reader = new StreamReader(weatherHistoryFile))
                 {
                     while (!reader.EndOfStream)
                     {
                         var line = reader.ReadLine();
-
-                        //Remove any measurement symbols
-                        line = line.Replace("°", "");
-                        line = line.Replace("C", "");
-                        line = line.Replace("hPa", "");
-                        line = line.Replace("%", "");
 
                         var values = line.Split(',');
 
@@ -81,13 +85,13 @@ namespace WeatherTag
                         Double humidity = 99999;
                         Double pressure = 99999;
 
-                        DateTime Date1 = DateTime.Parse(values[0].ToString().Trim() + " " + values[1].ToString().Trim());
+                        DateTime dateWeatherReading = DateTime.Parse(values[0].ToString().Trim() + " " + values[1].ToString().Trim());
 
 
                         //Load Ambient Temperature value, if invalid mark as invalid = 99999
                         try
                         {
-                            ambientTemperature = Double.Parse(values[2].ToString().Trim());
+                            ambientTemperature = Double.Parse(RemoveNonNumeric(values[2].ToString().Trim()));
 
                             //Check for valid Ambient Temperature Range in Celsius
                             if ((ambientTemperature < -100) || (ambientTemperature > 150))
@@ -104,7 +108,7 @@ namespace WeatherTag
                         //Load Humidity value, if invalid mark as invalid = 99999
                         try
                         {
-                            humidity = Double.Parse(values[3].ToString().Trim());
+                            humidity = Double.Parse(RemoveNonNumeric(values[3].ToString().Trim()));
 
                             //Check for valid Humidity Range
                             if ((humidity < 0) || (humidity > 100))
@@ -119,7 +123,7 @@ namespace WeatherTag
                         }
                         try
                         {
-                            pressure = Double.Parse(values[4].ToString().Trim());
+                            pressure = Double.Parse(RemoveNonNumeric(values[4].ToString().Trim()));
 
                             //Check for valid Pressure Range
                             if ((pressure < 800) || (pressure > 1100))
@@ -132,104 +136,105 @@ namespace WeatherTag
                             pressure = 99999;
                         }
 
-                        reading.Add(new WeatherReading(Date1, ambientTemperature, humidity, pressure));
+                        reading.Add(new WeatherReading(dateWeatherReading, ambientTemperature, humidity, pressure));
                     }
                 }
             }
-            catch
+            catch (Exception e)
             {
-                Console.WriteLine(WeatherHistoryFile +" not found or unable to open.");
+                Console.WriteLine(weatherHistoryFile + " not found or unable to open.");
+                Console.WriteLine(e.ToString());
                 Environment.Exit(0);
             }
 
 
             //For each image file in the folder, add the closest reading from the weather history file.
-            for (int q = 0; q < ImageFiles.Count(); q++)
+            for (int q = 0; q < imageFiles.Count(); q++)
             {
 
-                DateTime PhotoDate;
-                bool NoPhotoDate = false;
+                DateTime photoDate;
+                bool noPhotoDate = false;
 
                 //Get the image's Created Time, if not found or an error occurs set to error value of 1/1/2050 12:00 AM
                 try
                 {
-                    PhotoDate = GetFileDate(ImageFiles[q]);
+                    photoDate = GetFileDate(imageFiles[q]);
                 }
                 catch
                 {
-                    PhotoDate = DateTime.Parse("1/1/2050 12:00 AM");
-                    NoPhotoDate = true;
+                    photoDate = DateTime.Parse("1/1/2050 12:00 AM");
+                    noPhotoDate = true;
                 }
 
-                Double MinDiffTime = 30;
+                Double minDiffTime = 30;
                 WeatherReading closestReading = new WeatherReading(DateTime.Parse("1/1/1900 12:00 AM"), 0, 0, 0);
 
-                if (NoPhotoDate == false)
+                if (noPhotoDate == false)
                 {
                     for (int i = 0; i < reading.Count; i++)
                     {
-                        TimeSpan DiffTime = PhotoDate - reading[i].ReadingDate;
-                        if (Math.Abs(DiffTime.TotalMinutes) < MinDiffTime)
+                        TimeSpan diffTime = photoDate - reading[i].ReadingDate;
+                        if (Math.Abs(diffTime.TotalMinutes) < minDiffTime)
                         {
                             closestReading = reading[i];
-                            MinDiffTime = Math.Abs(DiffTime.TotalMinutes);
+                            minDiffTime = Math.Abs(diffTime.TotalMinutes);
                         }
                     }
                 }
 
 
-                Console.WriteLine("------ File " + (q+1).ToString()+ " of " + ImageFiles.Count() + " ------");
+                Console.WriteLine("------ File " + (q+1).ToString()+ " of " + imageFiles.Count() + " ------");
+                Console.WriteLine(minDiffTime.ToString());
 
-                if (MinDiffTime < 30)
+                if (minDiffTime < 30)
                 {
 
-                    string ConsoleOutput = "";
+                    string consoleOutput = "";
 
                     if (closestReading.AmbientTemperature != 99999)
                     {
-                        ConsoleOutput = ConsoleOutput + " " + closestReading.AmbientTemperature.ToString() + "°C ";
+                        consoleOutput = consoleOutput + " " + closestReading.AmbientTemperature.ToString() + " °C ";
                     }
                     else
                     {
-                        ConsoleOutput = ConsoleOutput + " -- °C ";
+                        consoleOutput = consoleOutput + " -- °C ";
                     }
 
                     if (closestReading.Humidity != 99999)
                     {
-                        ConsoleOutput = ConsoleOutput + " " + closestReading.Humidity.ToString() + " %";
+                        consoleOutput = consoleOutput + " " + closestReading.Humidity.ToString() + " %";
                     }
                     else
                     {
-                        ConsoleOutput = ConsoleOutput + " -- % ";
+                        consoleOutput = consoleOutput + " -- % ";
                     }
 
                     if (closestReading.Pressure != 99999)
                     {
-                        ConsoleOutput = ConsoleOutput + " " + closestReading.Pressure.ToString() + " hPa";
+                        consoleOutput = consoleOutput + " " + closestReading.Pressure.ToString() + " hPa";
                     }
                     else
                     {
-                        ConsoleOutput = ConsoleOutput + " -- hPa ";
+                        consoleOutput = consoleOutput + " -- hPa ";
                     }
 
-
-                    Console.WriteLine(ImageFiles[q].ToString().Replace(Directory.GetCurrentDirectory(),"").Trim()+" - "+ConsoleOutput);
-                    if (WriteToFile == true)
+                    Console.WriteLine(imageFiles[q].ToString().Replace(Directory.GetCurrentDirectory(),"").Trim()+" - "+ consoleOutput);
+                    if (writeToFile == true)
                     {
-                        string WriteStatus = WriteFileInfo(ImageFiles[q], closestReading);
+                        string WriteStatus = WriteFileInfo(imageFiles[q], closestReading, overwriteFile);
                         Console.WriteLine(WriteStatus);
                     }
                    
                 }
                 else
                 {
-                    if (NoPhotoDate == true)
+                    if (noPhotoDate == true)
                     {
-                        Console.WriteLine(ImageFiles[q].ToString().Replace(Directory.GetCurrentDirectory(), "").Trim() + " - Photo file has no date and time.");
+                        Console.WriteLine(imageFiles[q].ToString().Replace(Directory.GetCurrentDirectory(), "").Trim() + " - Photo file has no date and time.");
                     }
                     else
                     {
-                        Console.WriteLine(ImageFiles[q].ToString().Replace(Directory.GetCurrentDirectory(), "").Trim() + " - No reading found.");
+                        Console.WriteLine(imageFiles[q].ToString().Replace(Directory.GetCurrentDirectory(), "").Trim() + " - No reading found.");
                     }
                 }
             }
@@ -238,14 +243,15 @@ namespace WeatherTag
 
         }
 
+        static string RemoveNonNumeric(string input) { return Regex.Replace(input, @"[^0-9\.\-]", ""); }
+
         public static DateTime GetFileDate(string file)
         {
             //Retrieve Image Date
-
             List<ExifToolJSON> ExifToolResponse;
-            string CreateDateTime = "";
-            string CreateDate = "";
-            string CreateTime = "";
+            string createDateTime = "";
+            string createDate = "";
+            string createTime = "";
 
             // Start Process
             Process p = new Process();
@@ -266,14 +272,14 @@ namespace WeatherTag
             if (json != "")
             {
                 ExifToolResponse = JsonConvert.DeserializeObject<List<ExifToolJSON>>(json);
-                CreateDateTime = ExifToolResponse[0].CreateDate.ToString().Trim();
-                string[] words = CreateDateTime.Split(' ');
-                CreateDate = words[0].ToString().Replace(":","/");
-                CreateTime = words[1].ToString();
-                CreateDateTime = CreateDate + " " + CreateTime;
+                createDateTime = ExifToolResponse[0].CreateDate.ToString().Trim();
+                string[] words = createDateTime.Split(' ');
+                createDate = words[0].ToString().Replace(":","/");
+                createTime = words[1].ToString();
+                createDateTime = createDate + " " + createTime;
             }
             
-            return DateTime.Parse(CreateDateTime);
+            return DateTime.Parse(createDateTime);
         }
 
         public static double CheckExiftool()
@@ -310,7 +316,7 @@ namespace WeatherTag
             return exiftoolreturn;
         }
 
-        public static string WriteFileInfo(string File, WeatherReading reading)
+        public static string WriteFileInfo(string File, WeatherReading reading, bool overwriteFile)
         {
             //Write Weather Values back to file
 
@@ -332,6 +338,11 @@ namespace WeatherTag
             {
                 Arguments = Arguments + " -\"Pressure=" + reading.Pressure + "\"";
             }
+            if (overwriteFile==true)
+            {
+                Arguments = Arguments + " -overwrite_original";
+            }
+
 
             // Redirect the output stream of the child process.
             p.StartInfo.UseShellExecute = false;
